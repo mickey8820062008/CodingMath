@@ -1,0 +1,113 @@
+
+<!-- saved from url=(0037)http://demos.playfuljs.com/particles/ -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Particles Demo - PlayfulJS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  </head>
+  <body style="background: #000" data-feedly-mini="yes">
+    <canvas id="display" width="1920" height="901">
+
+    <script>
+
+      var DAMPING = 0.95;
+		var percentColors = [
+			{ pct:0.0, color:{ r: 76, g:76, b:255 } },
+			{ pct:0.1, color:{ r:76, g:255, b:76 } },
+			{ pct:0.15, color:{ r:255, g:76, b:76 } },
+			{ pct:1.0, color:{ r:255, g:76, b:76 } } ];
+
+		var getColorForPercentage = function(pct) {
+			for (var i = 1; i < percentColors.length - 1; i++) {
+				if (pct < percentColors[i].pct) {
+					break;
+				}
+			}
+			var lower = percentColors[i - 1];
+			var upper = percentColors[i];
+			var range = upper.pct - lower.pct;
+			var rangePct = (pct - lower.pct) / range;
+			var pctLower = 1 - rangePct;
+			var pctUpper = rangePct;
+			var color = {
+				r: Math.floor(lower.color.r * pctLower + upper.color.r * pctUpper),
+				g: Math.floor(lower.color.g * pctLower + upper.color.g * pctUpper),
+				b: Math.floor(lower.color.b * pctLower + upper.color.b * pctUpper)
+			};
+			
+			return "#"+color.r.toString(16)+color.g.toString(16)+color.b.toString(16);
+			 
+		}  
+      function Particle(x, y) {
+        this.x = this.oldX = x;
+        this.y = this.oldY = y;
+        this.v=0;
+      }
+
+      Particle.prototype.integrate = function() {
+        var velocityX = (this.x - this.oldX) * DAMPING;
+        var velocityY = (this.y - this.oldY) * DAMPING;
+        this.oldX = this.x;
+        this.oldY = this.y;
+        this.x += velocityX;
+        this.y += velocityY;
+		this.v=Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+		
+      };
+
+      Particle.prototype.attract = function(x, y) {
+        var dx = x - this.x;
+        var dy = y - this.y;
+        var distance = Math.sqrt(dx * dx + dy * dy);
+        distance=Math.max(distance,0.1);
+        div=Math.pow(distance,1.8);
+        n=5;
+        this.x += n*dx / div;
+        this.y += n*dy / div;
+      };
+
+      Particle.prototype.draw = function() {
+		pct=Math.min(this.v/20.0,1);
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeStyle = getColorForPercentage(pct);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.oldX, this.oldY);
+        ctx.lineTo(this.x, this.y);
+        
+        //ctx.arc(this.x,this.y,1,0,2*Math.PI);
+        ctx.stroke();
+      };
+
+      var display = document.getElementById('display');
+      var ctx = display.getContext('2d');
+      var particles = [];
+      var width = display.width = window.innerWidth;
+      var height = display.height = window.innerHeight;
+      var mouse = { x: width * 0.5, y: height * 0.5 };
+
+      for (var i = 0; i < 10000; i++) {
+        particles[i] = new Particle(Math.random() * width, Math.random() * height);
+      }
+
+      display.addEventListener('mousemove', onMousemove);
+
+      function onMousemove(e) {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      }
+
+      requestAnimationFrame(frame);
+
+      function frame() {
+        requestAnimationFrame(frame);
+        ctx.clearRect(0, 0, width, height);
+        for (var i = 0; i < particles.length; i++) {
+          particles[i].attract(mouse.x, mouse.y);
+          particles[i].integrate();
+          particles[i].draw();
+        }
+      }
+    </script>
+
+
+</canvas></body></html>
